@@ -106,7 +106,8 @@ class Game{
   }
  }
  findGround(x,z){for(let y=CONFIG.WORLD.HEIGHT-1;y>=0;y--)if(INFO[this.world.getBlock(Math.floor(x),y,Math.floor(z))]?.solid)return y+1;return 70}
- newWorld(name="Новый мир",seed=""){this.skipUnloadSave=true;this.running=false;this.network.disconnect();const id=SaveManager.createWorld(name,seed);try{sessionStorage.setItem("vs_launch_world_v71",id)}catch(e){}location.reload()}
+ launchWorld(id){if(!id)return false;try{const data=SaveManager.readAll();const world=data.worlds?.[id];if(!world?.save)return false;SaveManager.setActive(id);for(const k of ["vs_launch_world_v72","vs_launch_world_v71","vs_launch_world_v70","vs_launch_world_v69","vs_launch_world_v68","vs_launch_world_v67"])try{sessionStorage.removeItem(k)}catch{}try{sessionStorage.setItem("vs_launch_world_v72",id)}catch{}location.reload();return true}catch(e){console.error("WORLD LAUNCH FAILED",e);return false}}
+ newWorld(name="Новый мир",seed=""){this.skipUnloadSave=true;this.running=false;this.network.disconnect();const id=SaveManager.createWorld(name,seed);try{sessionStorage.setItem("vs_launch_world_v72",id)}catch(e){}location.reload()}
  hostLAN(){this.save();const u=`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws`;this.mode="lan-host";this.setModeBadge();this.menu.hideMain();this.network.connect(u,true);this.network.chatLine("★ Локальная игра открыта для друзей");this.network.syncHostWorld();this.running=true;if(!matchMedia("(pointer:coarse)").matches)this.renderer.domElement.requestPointerLock?.()}
  connectLAN(){const v=document.getElementById("lanAddress"),u=v?.value.trim();if(!u){this.network.chatLine("Укажи адрес LAN-сервера");return}this.mode="lan-client";this.setModeBadge();this.menu.hideMain();this.network.connect(u,false);this.running=true;if(!matchMedia("(pointer:coarse)").matches)this.renderer.domElement.requestPointerLock?.()}
  resume(){this.menu.hidePause();this.running=true;this.setGameUI(true);this.renderer.domElement.requestPointerLock?.()}
@@ -186,16 +187,16 @@ class Game{
  getArmorValue(){return Object.values(this.inventory.equipment||{}).reduce((sum,id)=>sum+(INFO[id]?.armor||0),0)}
 
  setupTouchLayout(){
-  this.touchLayoutKey="vs_touch_layout_v70";
+  this.touchLayoutKey="vs_touch_layout_v72";
   this.touchDefaults={
     joystick:{x:2.5,y:67,size:104},jump:{x:75,y:58,size:62},attack:{x:87,y:58,size:62},use:{x:75,y:76,size:62},inventory:{x:87,y:76,size:62},pause:{x:50,y:2,size:48}
   };
   try{this.touchLayout=JSON.parse(localStorage.getItem(this.touchLayoutKey)||"null")||JSON.parse(JSON.stringify(this.touchDefaults))}catch{this.touchLayout=JSON.parse(JSON.stringify(this.touchDefaults))}
   this.editingControls=false;this.selectedControl=null;this.applyTouchLayout();
   const q=id=>document.getElementById(id),range=q("controlSizeRange"),value=q("controlSizeValue"),selected=q("controlSelected"),camRange=q("cameraSensitivityRange"),camValue=q("cameraSensitivityValue");
-  try{const saved=Number(localStorage.getItem("vs_camera_sensitivity_v71"));if(Number.isFinite(saved))this.controls.touchSensitivity=this.controls.touchPitchSensitivity=saved}catch{}
+  try{const saved=Number(localStorage.getItem("vs_camera_sensitivity_v71"));if(Number.isFinite(saved))this.controls.touchSensitivity=this.controls.touchPitchSensitivity=Math.max(.004,Math.min(.018,saved))}catch{}
   if(camRange){camRange.value=Math.round(this.controls.touchSensitivity*1000);if(camValue)camValue.textContent=(this.controls.touchSensitivity*1000).toFixed(0)}
-  camRange?.addEventListener("input",()=>{const v=Math.max(.006,Math.min(.032,Number(camRange.value)/1000));this.controls.touchSensitivity=v;this.controls.touchPitchSensitivity=v;try{localStorage.setItem("vs_camera_sensitivity_v71",String(v))}catch{}if(camValue)camValue.textContent=Math.round(v*1000)});
+  camRange?.addEventListener("input",()=>{const v=Math.max(.004,Math.min(.018,Number(camRange.value)/1000));this.controls.touchSensitivity=v;this.controls.touchPitchSensitivity=v;try{localStorage.setItem("vs_camera_sensitivity_v71",String(v))}catch{}if(camValue)camValue.textContent=Math.round(v*1000)});
   q("controlsEditButton")?.addEventListener("click",()=>this.openControlsEditor());
   q("controlsDone")?.addEventListener("click",()=>this.closeControlsEditor());
   q("controlsReset")?.addEventListener("click",()=>{this.touchLayout=JSON.parse(JSON.stringify(this.touchDefaults));this.applyTouchLayout();if(range)range.value=this.selectedControl?(this.touchLayout[this.selectedControl]?.size||82):82;if(value)value.textContent=range?.value||82});
@@ -242,10 +243,11 @@ class Game{
   const stopJoy=e=>{if(e&&e.pointerId!==joyId)return;if(e)e.stopPropagation();joyId=null;knob.style.transform="";for(const k of ["KeyW","KeyA","KeyS","KeyD"])this.controls.keys[k]=false};joy.addEventListener("pointerup",stopJoy);joy.addEventListener("pointercancel",stopJoy);joy.addEventListener("lostpointercapture",()=>stopJoy());
   let lookId=null,lastX=0,lastY=0;
   const isUiTarget=t=>!!t?.closest?.("#mobileControls,#hotbar,#pauseGameButton,.screen,.debugScreen,#controlsEditor");
-  const lookDown=e=>{if(!this.running||this.editingControls||e.pointerType!=="touch"||isUiTarget(e.target))return;if(lookId!==null)return;lookId=e.pointerId;lastX=e.clientX;lastY=e.clientY;this.renderer.domElement.setPointerCapture?.(e.pointerId)};
-  const lookMove=e=>{if(e.pointerId!==lookId||!this.running||this.editingControls)return;e.preventDefault();const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;const lookSensitivity=this.controls.touchSensitivity||.0085;const pitchSensitivity=this.controls.touchPitchSensitivity||lookSensitivity;this.controls.yaw-=dx*lookSensitivity;this.controls.pitch-=dy*pitchSensitivity;this.controls.pitch=Math.max(-1.5,Math.min(1.5,this.controls.pitch))};
+  const lookDown=e=>{if(!this.running||this.editingControls||e.pointerType!=="touch"||isUiTarget(e.target)||lookId!==null)return;lookId=e.pointerId;lastX=e.clientX;lastY=e.clientY;e.preventDefault?.()};
+  const lookMove=e=>{if(e.pointerId!==lookId||!this.running||this.editingControls)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;const lookSensitivity=this.controls.touchSensitivity||.009;const pitchSensitivity=this.controls.touchPitchSensitivity||lookSensitivity;this.controls.yaw-=dx*lookSensitivity;this.controls.pitch-=dy*pitchSensitivity;this.controls.pitch=Math.max(-1.5,Math.min(1.5,this.controls.pitch));e.preventDefault?.()};
   const lookEnd=e=>{if(e.pointerId===lookId)lookId=null};
-  this.renderer.domElement.addEventListener("pointerdown",lookDown,{passive:false});this.renderer.domElement.addEventListener("pointermove",lookMove,{passive:false});this.renderer.domElement.addEventListener("pointerup",lookEnd);this.renderer.domElement.addEventListener("pointercancel",lookEnd);
+  window.addEventListener("pointerdown",lookDown,{passive:false,capture:true});window.addEventListener("pointermove",lookMove,{passive:false,capture:true});window.addEventListener("pointerup",lookEnd,{passive:true,capture:true});window.addEventListener("pointercancel",lookEnd,{passive:true,capture:true});
+
  }
  useSelected(){const s=this.inventory.selectedItem(),info=s?.id?INFO[s.id]:null;if(info?.food){if(this.player.eat())this.audio.block();return}if(s?.id===ITEM.HOE){const hit=this.player.raycast();if(hit&&[BLOCK.DIRT,BLOCK.GRASS].includes(hit.id)&&this.world.getBlock(hit.block.x,hit.block.y+1,hit.block.z)===BLOCK.AIR){this.world.setBlock(hit.block.x,hit.block.y,hit.block.z,BLOCK.FARMLAND);this.audio.block();this.particles.dust(new THREE.Vector3(hit.block.x+.5,hit.block.y+.5,hit.block.z+.5),0x7a4c2b,8);this.systems.award(2,"Первая грядка")}return}if(info?.place||info?.solid)this.placeBlock()}
   attackOrBreak(){const target=this.player.raycast();if(this.systems.interact(target))return;const result=this.mobs.attack(this.player);if(result.hit){this.audio.hit();this.effects.hit();this.stopMining();if(result.dead){this.inventory.add(ITEM.RAW_MEAT,1);if(Math.random()<.25)this.inventory.add(ITEM.APPLE,1);this.systems.award(20,"Охотник на нежить");this.particles.burst(this.player.pos.clone().add(new THREE.Vector3(0,1,0)),0xb84b4b,20);}return}this.beginMining(target)}
@@ -298,7 +300,7 @@ async toggleFullscreen(){try{if(document.fullscreenElement){await document.exitF
 }
 const game=new Game();
 globalThis.__voxelGame=game;
-try{const launchKeys=["vs_launch_world_v71","vs_launch_world_v70","vs_launch_world_v69","vs_launch_world_v68","vs_launch_world_v67"];const key=launchKeys.find(k=>sessionStorage.getItem(k));if(key){sessionStorage.removeItem(key);requestAnimationFrame(()=>setTimeout(()=>game.start(),120))}}catch(e){console.warn("Auto world launch skipped",e)}
+try{const launchKeys=["vs_launch_world_v72","vs_launch_world_v71","vs_launch_world_v70","vs_launch_world_v69","vs_launch_world_v68","vs_launch_world_v67"];const key=launchKeys.find(k=>{try{return !!sessionStorage.getItem(k)}catch{return false}});if(key){let id=null;try{id=sessionStorage.getItem(key);sessionStorage.removeItem(key)}catch{}if(id)SaveManager.setActive(id);requestAnimationFrame(()=>setTimeout(()=>game.start(),120))}}catch(e){console.warn("Auto world launch skipped",e)}
 const boot=document.getElementById("bootSplash"),bar=document.getElementById("bootProgress"),status=document.getElementById("bootStatus");
 requestAnimationFrame(()=>{if(bar)bar.style.width="100%";if(status)status.textContent="Готово";setTimeout(()=>boot?.classList.add("done"),80)});
 addEventListener("beforeunload",()=>{if(!game.skipUnloadSave)game.save()});
