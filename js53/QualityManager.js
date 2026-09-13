@@ -7,7 +7,7 @@ export class QualityManager {
     const veryLow = mem <= 2 || cores <= 2;
     const low = veryLow || mem <= 4 || cores <= 4;
     const saved = localStorage.getItem('vs_quality');
-    this.tier = saved || (veryLow ? 'low' : low ? 'medium' : 'high');
+    this.tier = ['low','medium','high'].includes(saved) ? saved : (veryLow ? 'low' : low ? 'medium' : 'high');
     this.mobile = mobile;
     this.applyTier();
   }
@@ -18,7 +18,7 @@ export class QualityManager {
       high: { pixelRatio:.82, renderDistance:4, startupDistance:1, maxLights:10, particles:90, rain:70, clouds:8, shadows:false, maxMobs:10, shadowSize:512 }
     };
     this.preset = presets[this.tier] || presets.medium;
-    if(this.mobile) this.preset={...this.preset,pixelRatio:Math.min(this.preset.pixelRatio,.78),shadows:false};
+    if(this.mobile) this.preset={...this.preset,pixelRatio:Math.min(this.preset.pixelRatio,.72),renderDistance:Math.min(this.preset.renderDistance,3),particles:Math.min(this.preset.particles,55),rain:Math.min(this.preset.rain,45),clouds:Math.min(this.preset.clouds,6),maxMobs:Math.min(this.preset.maxMobs,7),shadows:false};
   }
   configureRenderer(renderer) {
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, this.preset.pixelRatio));
