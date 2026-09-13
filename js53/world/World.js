@@ -53,13 +53,13 @@ export class World{
   }
   mat(color,file,opts={}){
     const presets={
-      grass:['#667c43','#87975a','grass'],dirt:['#76583b',null,'dirt'],stone:['#77756f',null,'stone'],sand:['#c8b78a',null,'sand'],gravel:['#77756f',null,'cobble'],wood_side:['#765b3d',null,'wood'],wood_top:['#9a7a50',null,'wood'],leaves:['#536f3e','#718a52','leaves'],planks:['#92714a',null,'wood'],brick:['#8d5b50',null,'brick'],glass:['#a9c7c7',null,'glass'],water:['#587f91',null,'noise'],coal:['#383a38',null,'ore'],iron:['#77766f','#aaa79b','ore'],copper:['#77746b','#a36f50','ore'],furnace:['#696965',null,'stone'],chest:['#765735',null,'wood'],lantern:['#9b8050','#d0b36d','ore'],campfire:['#875b42','#c18a48','ore'],moss:['#5c7047',null,'grass'],glowstone:['#b4a36a','#d5c78d','ore'],cobble:['#686762',null,'cobble'],snow:['#d7dedb',null,'snow'],clay:['#96786d',null,'dirt'],farmland:['#664c39',null,'dirt'],wheat:['#87905a','#b0a765','grass'],bedrock:['#292a29',null,'cobble']
+      grass:['#667c43','#87975a','grass'],dirt:['#76583b',null,'dirt'],stone:['#77756f',null,'stone'],sand:['#c8b78a',null,'sand'],gravel:['#77756f',null,'cobble'],wood_side:['#765b3d',null,'wood'],wood_top:['#9a7a50',null,'wood'],leaves:['#536f3e','#718a52','leaves'],planks:['#92714a',null,'wood'],brick:['#8d5b50',null,'brick'],glass:['#a9c7c7',null,'glass'],water:['#587f91',null,'noise'],coal:['#383a38',null,'ore'],iron:['#77766f','#aaa79b','ore'],copper:['#77746b','#a36f50','ore'],furnace:['#696965',null,'stone'],chest:['#765735',null,'wood'],lantern:['#9b8050','#d0b36d','ore'],campfire:['#875b42','#c18a48','ore'],moss:['#5c7047',null,'grass'],glowstone:['#b4a36a','#d5c78d','ore'],cobble:['#686762',null,'cobble'],snow:['#d7dedb',null,'snow'],clay:['#96786d',null,'dirt'],farmland:['#664c39',null,'dirt'],wheat:['#87905a','#b0a765','grass'],bedrock:['#292a29',null,'cobble'],obsidian:['#292238',null,'noise'],diamond_ore:['#69777f','#55d7e8','ore']
     };
     const q=presets[file]||[color,null,'noise'];return new THREE.MeshLambertMaterial({color:0xffffff,map:this.texture(file,q[0],q[1],q[2]),...opts,side:THREE.DoubleSide});
   }
   makeMaterials(){
     const M={}, add=(id,color,file,opts={})=>{M[id]=this.mat(color,file,opts)};
-    add(BLOCK.GRASS,'#5b913b','grass');add(BLOCK.DIRT,'#79502d','dirt');add(BLOCK.STONE,'#777777','stone');add(BLOCK.SAND,'#d8c17a','sand');add(BLOCK.GRAVEL,'#77736b','gravel');add(BLOCK.LOG,'#7d542f','wood_side');add(BLOCK.LEAVES,'#3f8e3a','leaves',{transparent:true,opacity:.96});add(BLOCK.PLANKS,'#a56f3f','planks');add(BLOCK.GLASS,'#b9e8f5','glass',{transparent:true,opacity:.55});add(BLOCK.BRICK,'#9c4d40','brick');add(BLOCK.WATER,'#3973c9','water',{transparent:true,opacity:.55});add(BLOCK.COAL,'#303030','coal');add(BLOCK.IRON,'#777777','iron');add(BLOCK.COPPER,'#777777','copper');add(BLOCK.FURNACE,'#777777','furnace');add(BLOCK.CHEST,'#9a5b28','chest');add(BLOCK.LANTERN,'#d79b35','lantern');add(BLOCK.CAMPFIRE,'#d65d24','campfire');add(BLOCK.MOSS,'#4f8744','moss');add(BLOCK.GLOWSTONE,'#e7c85d','glowstone');add(BLOCK.COBBLE,'#696969','cobble');add(BLOCK.SNOW,'#e9f2f4','snow');add(BLOCK.CLAY,'#aa7667','clay');add(BLOCK.FARMLAND,'#6b452c','farmland');add(BLOCK.BED,'#c9c1b5','bed');add(BLOCK.CRAFTING_TABLE,'#a56f3f','planks');add(BLOCK.WHEAT,'#7f9a39','wheat',{transparent:true,opacity:.95});add(BLOCK.BEDROCK,'#171717','bedrock');
+    add(BLOCK.GRASS,'#5b913b','grass');add(BLOCK.DIRT,'#79502d','dirt');add(BLOCK.STONE,'#777777','stone');add(BLOCK.SAND,'#d8c17a','sand');add(BLOCK.GRAVEL,'#77736b','gravel');add(BLOCK.LOG,'#7d542f','wood_side');add(BLOCK.LEAVES,'#3f8e3a','leaves',{transparent:true,opacity:.96});add(BLOCK.PLANKS,'#a56f3f','planks');add(BLOCK.GLASS,'#b9e8f5','glass',{transparent:true,opacity:.55});add(BLOCK.BRICK,'#9c4d40','brick');add(BLOCK.WATER,'#3973c9','water',{transparent:true,opacity:.55});add(BLOCK.COAL,'#303030','coal');add(BLOCK.IRON,'#777777','iron');add(BLOCK.COPPER,'#777777','copper');add(BLOCK.FURNACE,'#777777','furnace');add(BLOCK.CHEST,'#9a5b28','chest');add(BLOCK.LANTERN,'#d79b35','lantern');add(BLOCK.CAMPFIRE,'#d65d24','campfire');add(BLOCK.MOSS,'#4f8744','moss');add(BLOCK.GLOWSTONE,'#e7c85d','glowstone');add(BLOCK.COBBLE,'#696969','cobble');add(BLOCK.SNOW,'#e9f2f4','snow');add(BLOCK.CLAY,'#aa7667','clay');add(BLOCK.FARMLAND,'#6b452c','farmland');add(BLOCK.BED,'#c9c1b5','bed');add(BLOCK.CRAFTING_TABLE,'#a56f3f','planks');add(BLOCK.OBSIDIAN,'#292238','obsidian');add(BLOCK.DIAMOND_ORE,'#6f7b83','diamond_ore');add(BLOCK.WHEAT,'#7f9a39','wheat',{transparent:true,opacity:.95});add(BLOCK.BEDROCK,'#171717','bedrock');
     return M;
   }
   applyChanges(c){const s=c.size;for(const [k,b] of this.changes){const [x,y,z]=k.split(",").map(Number);if(Math.floor(x/s)===c.cx&&Math.floor(z/s)===c.cz)c.set(((x%s)+s)%s,y,((z%s)+s)%s,b)}}
@@ -137,9 +137,14 @@ export class World{
       b.i.push(base,base+1,base+2,base,base+2,base+3);
     };
 
+    // Find the highest non-air block per column first. Most of the 96-high
+    // chunk is empty sky, so this avoids scanning empty vertical space repeatedly.
+    const tops=new Uint8Array(s*s);
+    for(let x=0;x<s;x++)for(let z=0;z<s;z++){let top=0;for(let y=c.height-1;y>=0;y--){if(c.get(x,y,z)!==BLOCK.AIR){top=y+1;break}}tops[x*s+z]=top}
     for(let x=0;x<s;x++){
       for(let y=0;y<c.height;y++){
         for(let z=0;z<s;z++){
+          if(y>=tops[x*s+z]) continue;
           const id=c.get(x,y,z);
           if(!isRenderable(id)) continue;
           for(const face of faceDefs){
@@ -167,7 +172,7 @@ export class World{
       const material=this.materials[id]||this.materials[BLOCK.STONE];
       const mesh=new THREE.Mesh(g,material);
       mesh.frustumCulled=false;
-      mesh.castShadow=true;mesh.receiveShadow=true;
+      mesh.castShadow=!this.cfg.QUALITY?.mobile;mesh.receiveShadow=!this.cfg.QUALITY?.mobile;
       mesh.renderOrder=INFO[id]?.transparent?2:1;
       mesh.userData={blockId:id,chunk:c,ownedGeometry:true};
       group.add(mesh);

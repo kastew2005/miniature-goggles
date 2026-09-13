@@ -1,7 +1,7 @@
 import THREE from "../three.js";
 import {BLOCK,INFO} from "../world/Block.js";
 export class Player{
- constructor(camera,world,controls,cfg){this.camera=camera;this.world=world;this.controls=controls;this.cfg=cfg;this.pos=new THREE.Vector3(0,70,0);this.vel=new THREE.Vector3();this.onGround=false;this.health=20;this.hunger=20;this.inventory=null;this.walkTime=0;this.sprint=false;this.stamina=100;this.xp=0;this.level=1;this.regenTimer=0}
+ constructor(camera,world,controls,cfg){this.camera=camera;this.world=world;this.controls=controls;this.cfg=cfg;this.pos=new THREE.Vector3(0,70,0);this.vel=new THREE.Vector3();this.onGround=false;this.health=20;this.hunger=20;this.inventory=null;this.walkTime=0;this.sprint=false;this.stamina=100;this.xp=0;this.level=1;this.regenTimer=0;this.effects={haste:0,miningFatigue:0,aquaAffinity:false}}
  setInventory(inv){this.inventory=inv}
  solid(x,y,z){return !!INFO[this.world.getBlock(Math.floor(x),Math.floor(y),Math.floor(z))]?.solid}
  collides(p){const r=.29,h=1.78;for(let x=Math.floor(p.x-r);x<=Math.floor(p.x+r);x++)for(let y=Math.floor(p.y+.02);y<=Math.floor(p.y+h);y++)for(let z=Math.floor(p.z-r);z<=Math.floor(p.z+r);z++)if(this.solid(x,y,z))return true;return false}

@@ -19,3 +19,4 @@
 @supports(width:100dvw){html,body{width:100dvw}#game{width:100dvw}}
 /* Universe 72 touch input hardening: prevent Safari/Chrome gesture takeover. */
 #game,#game canvas{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.controlsHelp{margin:6px 0 0;color:#8d9792;font-size:11px;line-height:1.45}.controlsEditorPanel select{width:100%;margin-top:5px;background:#101516;color:#eef2ef;border:1px solid #ffffff24;border-radius:9px;padding:10px}
