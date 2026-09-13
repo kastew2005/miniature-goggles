@@ -3,6 +3,7 @@ import {Chunk} from "./Chunk.js";
 import {Generator} from "./Generator.js";
 import {BLOCK,INFO} from "./Block.js";
 import {PlantBlock} from "./PlantBlock.js";
+import {GRASS_TEXTURES} from "./GrassTextures.js";
 
 /*
  * Voxel Survival Universe 43
@@ -52,17 +53,18 @@ export class World{
     }
     const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat,THREE.UnsignedByteType);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.wrapS=THREE.ClampToEdgeWrapping;t.wrapT=THREE.ClampToEdgeWrapping;t.flipY=false;t.colorSpace=THREE.SRGBColorSpace;t.needsUpdate=true;this._textureCache.set(file,t);return t;
   }
-  // Real local texture loader for user-supplied pixel-art assets.
+  // Embedded 16x16 user textures. This is intentionally synchronous and local:
+  // iOS Safari/WebViews cannot block world/menu startup on image decoding.
   imageTexture(path){
-    if(this._textureCache.has('img:'+path)) return this._textureCache.get('img:'+path);
-    const t=new THREE.TextureLoader().load('./assets/textures/'+path);
-    t.magFilter=THREE.NearestFilter;
-    t.minFilter=THREE.NearestFilter;
-    t.generateMipmaps=false;
-    t.wrapS=THREE.ClampToEdgeWrapping;
-    t.wrapT=THREE.ClampToEdgeWrapping;
-    t.colorSpace=THREE.SRGBColorSpace;
-    this._textureCache.set('img:'+path,t);
+    const key='img:'+path;
+    if(this._textureCache.has(key)) return this._textureCache.get(key);
+    const src=GRASS_TEXTURES[path];
+    if(!src) return this.texture(path,'#ffffff',null,'noise');
+    const t=new THREE.DataTexture(src.data,src.width,src.height,THREE.RGBAFormat,THREE.UnsignedByteType);
+    t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+    t.wrapS=THREE.ClampToEdgeWrapping;t.wrapT=THREE.ClampToEdgeWrapping;t.flipY=false;
+    t.colorSpace=THREE.SRGBColorSpace;t.needsUpdate=true;
+    this._textureCache.set(key,t);
     return t;
   }
   mat(color,file,opts={}){

@@ -16,11 +16,11 @@ export class Menu{
       lastPointer=now;
       try{fn(e)}catch(err){console.error("Menu action failed:",id,err)}
     };
-    el.addEventListener("pointerup",run,{passive:false});
-    el.addEventListener("click",e=>{
-      // Mouse click has no preceding pointerup in some older WebViews.
-      run(e);
-    },{passive:false});
+    // pointerdown is the most reliable activation event on iPhone/iPad.
+    // Keep click as a fallback for older WebViews/mouse input and suppress
+    // the synthetic click generated after a touch pointer event.
+    el.addEventListener("pointerdown",run,{passive:false});
+    el.addEventListener("click",e=>run(e),{passive:false});
   };
   bind("playButton",()=>this.openMode());bind("settingsButton",()=>q("settingsPanel")?.classList.remove("hidden"));bind("creditsButton",()=>q("creditsPanel")?.classList.remove("hidden"));
   bind("modeBackButton",()=>this.closeAllSub());bind("singleplayerChoice",()=>this.openWorlds());bind("multiplayerChoice",()=>this.openMultiplayer());bind("singleBackButton",()=>this.openMode());bind("newWorldButton",()=>this.openCreateWorld());bind("newWorldBackButton",()=>this.openWorlds());bind("createWorldButton",()=>this.createWorld());

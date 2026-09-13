@@ -38,7 +38,7 @@
       }
       if(!window.THREE||!window.THREE.REVISION)throw new Error("Three.js загрузился некорректно");
       window.__THREE_READY__=true;window.__THREE_REVISION__=window.THREE.REVISION;setStatus("3D-движок готов • r"+window.THREE.REVISION);
-      const s=document.createElement("script");s.type="module";s.src="./js53/main.js?v=76.0";
+      const s=document.createElement("script");s.type="module";s.src="./js53/main.js?v=76.1";
       s.onerror=()=>{setStatus("Ошибка js53/main.js?v=76.0 — смотри консоль Safari");retry?.classList.remove("hidden")};
       document.body.appendChild(s);
     }catch(e){console.error("BOOT",e);setStatus("Ошибка загрузки: "+(e&&e.message?e.message:String(e)));retry?.classList.remove("hidden")}
