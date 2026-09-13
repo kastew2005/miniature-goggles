@@ -1,8 +1,8 @@
-# Voxel Survival — Universe 69
+# Voxel Survival — Universe 70
 
 Cross-platform mobile build for iPhone/iPad (Safari/PWA), Android (Chrome/compatible browsers) and touch desktops.
 
-## Universe 69 fixes
+## Universe 70 fixes
 - Unified viewport/canvas sizing using VisualViewport when available.
 - Correct resize handling for orientation changes and iOS browser chrome.
 - Safe-area support for notches/home indicators.

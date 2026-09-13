@@ -1,5 +1,5 @@
 import THREE from "./three.js";
-import {CONFIG} from "./config.js";import {QualityManager} from "./QualityManager.js";import {World} from "./world/World.js";import {Player} from "./player/Player.js";import {Controls} from "./player/Controls.js";import {MobManager} from "./entities/Mob.js";import {Particles} from "./rendering/Particles.js";import {Lighting} from "./rendering/Lighting.js";import {Effects} from "./rendering/Effects.js";import {Weather} from "./rendering/Weather.js";import {AudioManager} from "./audio/AudioManager.js";import {Inventory,RECIPES,craft} from "./inventory/Inventory.js";import {HUD} from "./ui/HUD.js";import {Menu} from "./ui/Menu.js";import {SaveManager} from "./save/SaveManager.js";import {BLOCK,INFO,ITEM,ICON} from "./world/Block.js";import {Chunk} from "./world/Chunk.js";import {SurvivalSystems} from "./systems/SurvivalSystems.js";import {NetworkManager} from "./network/NetworkManager.js";import {DebugConsole} from "./debug/DebugConsole.js";
+import {CONFIG} from "./config.js";import {QualityManager} from "./QualityManager.js";import {World} from "./world/World.js";import {Player} from "./player/Player.js";import {Controls} from "./player/Controls.js";import {MobManager} from "./entities/Mob.js";import {Particles} from "./rendering/Particles.js";import {Lighting} from "./rendering/Lighting.js";import {Effects} from "./rendering/Effects.js";import {Weather} from "./rendering/Weather.js";import {AudioManager} from "./audio/AudioManager.js";import {Inventory} from "./inventory/Inventory.js";import {RECIPES_2X2,RECIPES_3X3,craftGrid,getCraftResult} from "./inventory/Crafting.js";import {HUD} from "./ui/HUD.js";import {Menu} from "./ui/Menu.js";import {SaveManager} from "./save/SaveManager.js";import {BLOCK,INFO,ITEM,ICON} from "./world/Block.js";import {Chunk} from "./world/Chunk.js";import {SurvivalSystems} from "./systems/SurvivalSystems.js";import {NetworkManager} from "./network/NetworkManager.js";import {DebugConsole} from "./debug/DebugConsole.js";
 class Game{
  constructor(){this.skipUnloadSave=false;const save=SaveManager.loadActive();if(save?.seed)CONFIG.WORLD.SEED=save.seed;this.quality=new QualityManager();CONFIG.QUALITY=this.quality.preset;
   this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0x87c9ef);this.scene.add(new THREE.HemisphereLight(0xffffff,0x4f5f45,1.35));this.scene.add(new THREE.AmbientLight(0xffffff,0.35));const vp0={w:Math.max(1,Math.round(window.visualViewport?.width||window.innerWidth||1)),h:Math.max(1,Math.round(window.visualViewport?.height||window.innerHeight||1))};this.camera=new THREE.PerspectiveCamera(CONFIG.RENDER.FOV,vp0.w/vp0.h,.05,CONFIG.RENDER.FAR);try{this.renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:this.quality.tier==="low"?"low-power":"high-performance",stencil:false,depth:true,preserveDrawingBuffer:false});}catch(e){throw new Error("WebGL недоступен на этом устройстве: "+(e?.message||e))}this.quality.configureRenderer(this.renderer);if(this.quality.tier==="low")this.renderer.toneMapping=THREE.NoToneMapping;this.resizeRenderer();this.renderer.setScissorTest(false);this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.shadowMap.enabled=this.quality.preset.shadows;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.toneMapping=this.quality.tier==="low"?THREE.NoToneMapping:THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=this.quality.tier==="low"?1:1.05;document.getElementById("game").appendChild(this.renderer.domElement);
@@ -101,34 +101,96 @@ class Game{
   }
  }
  findGround(x,z){for(let y=CONFIG.WORLD.HEIGHT-1;y>=0;y--)if(INFO[this.world.getBlock(Math.floor(x),y,Math.floor(z))]?.solid)return y+1;return 70}
- newWorld(name="Новый мир",seed=""){this.skipUnloadSave=true;this.running=false;this.network.disconnect();const id=SaveManager.createWorld(name,seed);try{sessionStorage.setItem("vs_launch_world_v69",id)}catch(e){}location.reload()}
+ newWorld(name="Новый мир",seed=""){this.skipUnloadSave=true;this.running=false;this.network.disconnect();const id=SaveManager.createWorld(name,seed);try{sessionStorage.setItem("vs_launch_world_v70",id)}catch(e){}location.reload()}
  hostLAN(){this.save();const u=`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws`;this.mode="lan-host";this.setModeBadge();this.menu.hideMain();this.network.connect(u,true);this.network.chatLine("★ Локальная игра открыта для друзей");this.network.syncHostWorld();this.running=true;if(!matchMedia("(pointer:coarse)").matches)this.renderer.domElement.requestPointerLock?.()}
  connectLAN(){const v=document.getElementById("lanAddress"),u=v?.value.trim();if(!u){this.network.chatLine("Укажи адрес LAN-сервера");return}this.mode="lan-client";this.setModeBadge();this.menu.hideMain();this.network.connect(u,false);this.running=true;if(!matchMedia("(pointer:coarse)").matches)this.renderer.domElement.requestPointerLock?.()}
  resume(){this.menu.hidePause();this.running=true;this.setGameUI(true);this.renderer.domElement.requestPointerLock?.()}
  save(){const ok=SaveManager.save({systems:this.systems.serialize(),seed:CONFIG.WORLD.SEED,time:this.time,player:{x:this.player.pos.x,y:this.player.pos.y,z:this.player.pos.z,health:this.player.health,hunger:this.player.hunger,xp:this.player.xp,level:this.player.level,stamina:this.player.stamina},inventory:this.inventory.serialize(),changes:this.world.serializeChanges(),respawnPoint:this.respawnPoint,bedRespawnKey:this.bedRespawnKey});if(ok){const t=document.getElementById("saveToast");t.textContent="✓ Мир сохранён";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1200)}}
  toMenu(){this.save();this.network.disconnect();this.mode="singleplayer";this.setModeBadge();this.running=false;this.setGameUI(false);document.exitPointerLock?.();this.menu.hidePause();this.menu.showMain()}
- toggleInventory(){this.inventoryOpen=!this.inventoryOpen;const panel=document.getElementById("inventoryPanel");if(!panel)return;panel.classList.toggle("hidden",!this.inventoryOpen);if(this.inventoryOpen){this.running=false;document.exitPointerLock?.();this.renderInventory()}else{this.running=true;if(!matchMedia("(pointer:coarse)").matches)this.renderer.domElement.requestPointerLock?.()}}
- setupInventory(){this.renderInventory();document.querySelectorAll("[data-recipe]").forEach((b,i)=>b.onclick=()=>{if(craft(this.inventory,RECIPES[i])){this.audio.block();this.renderInventory()}})}
+ toggleInventory(){this.inventoryOpen=!this.inventoryOpen;const panel=document.getElementById("inventoryPanel");if(!panel)return;panel.classList.toggle("hidden",!this.inventoryOpen);if(this.inventoryOpen){this.running=false;document.exitPointerLock?.();this.renderInventory()}else{this.returnCraftGrid(this.craftMode==="table"?this.craftGrid3:this.craftGrid2);this.craftMode="player";this.running=true;if(!matchMedia("(pointer:coarse)").matches)this.renderer.domElement.requestPointerLock?.()}}
+ setupInventory(){
+  this.craftGrid2=Array.from({length:4},()=>({id:0,count:0}));
+  this.craftGrid3=Array.from({length:9},()=>({id:0,count:0}));
+  this.craftMode="player";
+  this.renderInventory();
+ }
+ openCraftingTable(){
+  this.craftMode="table";
+  const p=document.getElementById("inventoryPanel");if(!p)return;
+  p.classList.remove("hidden");this.inventoryOpen=true;this.running=false;document.exitPointerLock?.();
+  this.renderInventory();
+ }
+ returnCraftGrid(grid){
+  if(!grid)return;
+  for(const s of grid){if(s.id&&s.count){if(!this.inventory.add(s.id,s.count))return false;s.id=0;s.count=0}}
+  return true;
+ }
+ closeCraftingUI(){
+  this.returnCraftGrid(this.craftMode==="table"?this.craftGrid3:this.craftGrid2);
+  this.craftMode="player";this.inventoryOpen=false;
+ }
+ addToCraftGrid(index,id,count=1){
+  const grid=this.craftMode==="table"?this.craftGrid3:this.craftGrid2,slot=grid[index];
+  if(!slot||!id||!this.inventory.has(id,count))return false;
+  if(slot.id&&slot.id!==id)return false;
+  slot.id=id;slot.count=Math.min(64,slot.count+count);this.inventory.remove(id,count);return true;
+ }
+ takeFromCraftGrid(index){
+  const grid=this.craftMode==="table"?this.craftGrid3:this.craftGrid2,slot=grid[index];
+  if(!slot?.id)return false;
+  if(!this.inventory.add(slot.id,1))return false;
+  slot.count--;if(slot.count<=0)slot.id=0;return true;
+ }
+ getCurrentRecipes(){return this.craftMode==="table"?RECIPES_3X3:RECIPES_2X2}
+ renderCraftGrid(){
+  const gridEl=document.getElementById("craftGrid");if(!gridEl)return;
+  const grid=this.craftMode==="table"?this.craftGrid3:this.craftGrid2;
+  gridEl.innerHTML="";gridEl.className="craftGrid "+(this.craftMode==="table"?"grid3":"grid2");
+  grid.forEach((s,i)=>{const b=document.createElement("button");b.type="button";b.className="craftCell";b.innerHTML=`<span>${s.id?ICON[s.id]||"·":""}</span><small>${s.count||""}</small>`;b.onclick=()=>{if(this.takeFromCraftGrid(i))this.renderInventory()};gridEl.appendChild(b)});
+  const out=getCraftResult(grid,this.getCurrentRecipes()),o=document.getElementById("craftOutput");
+  if(o){o.innerHTML=out?`<span>${ICON[out.recipe.out.id]||"·"}</span><strong>${INFO[out.recipe.out.id]?.name||"Предмет"}</strong><small>×${out.recipe.out.count}</small>`:`<span>→</span><strong>Нет результата</strong>`;o.classList.toggle("ready",!!out);o.onclick=()=>{if(!out)return;if(craftGrid(grid,out.recipe,this.inventory)){this.audio.block();this.renderInventory()}}}
+  const title=document.getElementById("craftTitle");if(title)title.textContent=this.craftMode==="table"?"ВЕРСТАК • 3×3":"КРАФТ • 2×2";
+ }
+ setupCraftingInventoryInteractions(){
+  const grid=document.getElementById("inventoryGrid");if(!grid)return;
+  grid.querySelectorAll(".invSlot").forEach((d,i)=>{
+    d.onclick=()=>{
+      const s=this.inventory.slots[i];
+      if(!s?.id)return;
+      const g=this.craftMode==="table"?this.craftGrid3:this.craftGrid2;
+      const idx=g.findIndex(x=>!x.id||x.id===s.id);
+      if(idx>=0&&this.addToCraftGrid(idx,s.id,1)){this.audio.block();this.renderInventory();return}
+      this.inventory.selected=i;this.renderInventory();
+    };
+    d.ondblclick=()=>{const s=this.inventory.slots[i];if(this.inventory.equipFromInventory(i,this.equipmentSlotForItem(s?.id))){this.audio.block();this.renderInventory()}}
+  });
+ }
  renderInventory(){
-  const grid=document.getElementById("inventoryGrid"),recipes=document.getElementById("recipes");if(!grid||!recipes)return;
+  const grid=document.getElementById("inventoryGrid");if(!grid)return;
   const icon=id=>ICON[id]||"·";grid.innerHTML="";
-  for(let i=0;i<36;i++){const s=this.inventory.slots[i],d=document.createElement("button");d.type="button";d.className="invSlot"+(i===this.inventory.selected?" selected":"");d.innerHTML=`<span class="slotIcon">${icon(s.id)}</span><small>${s.count||""}</small>`;d.onclick=()=>{this.inventory.selected=i;this.renderInventory()};d.ondblclick=()=>{if(this.inventory.equipFromInventory(i,this.equipmentSlotForItem(s.id))){this.audio.block();this.renderInventory()}};grid.appendChild(d)}
+  for(let i=0;i<36;i++){const s=this.inventory.slots[i],d=document.createElement("button");d.type="button";d.className="invSlot"+(i===this.inventory.selected?" selected":"");d.innerHTML=`<span class="slotIcon">${icon(s.id)}</span><small>${s.count||""}</small>`;grid.appendChild(d)}
   const eq=document.getElementById("equipmentGrid");if(eq){eq.querySelectorAll("[data-equip-slot]").forEach(el=>{const slot=el.dataset.equipSlot,id=this.inventory.equipmentItem(slot);el.innerHTML=`<span class="equipmentIcon">${id?icon(id):"＋"}</span><small>${id?(INFO[id]?.name||"Предмет"):el.dataset.empty}</small>`;el.classList.toggle("filled",!!id);el.onclick=()=>{if(this.inventory.unequip(slot)){this.audio.block();this.renderInventory()}}})}
-  recipes.innerHTML="";RECIPES.forEach((r,i)=>{const b=document.createElement("button");b.type="button";b.dataset.recipe=i;b.innerHTML=`<strong>${icon(r.out.id)} ${r.name}</strong><small>${r.in.map(x=>`${INFO[x.id]?.name||"?"} ×${x.count}`).join("  +  ")}</small>`;b.onclick=()=>{if(craft(this.inventory,r)){this.audio.block();this.renderInventory()}};recipes.appendChild(b)});
-  const selectedName=INFO[this.inventory.selectedItem()?.id]?.name||"Пусто",selectedInfo=document.getElementById("inventorySelectedInfo");if(selectedInfo)selectedInfo.textContent=selectedName;const rs=document.getElementById("recipeStatus");if(rs)rs.textContent=`Выбрано: ${selectedName} • Слот ${this.inventory.selected+1}/36 • Двойное нажатие — экипировать`;
+  const selectedName=INFO[this.inventory.selectedItem()?.id]?.name||"Пусто",selectedInfo=document.getElementById("inventorySelectedInfo");if(selectedInfo)selectedInfo.textContent=selectedName;
   const armor=this.getArmorValue();const av=document.getElementById("armorValue");if(av)av.textContent=`ЗАЩИТА ${armor}`;
+  const hand=document.getElementById("inventoryHandItem"),eqHead=document.getElementById("inventoryHeadItem"),eqBody=document.getElementById("inventoryBodyItem"),eqLegs=document.getElementById("inventoryLegsItem"),eqFeet=document.getElementById("inventoryFeetItem"),eqOff=document.getElementById("inventoryOffhandItem");
+  const selected=this.inventory.selectedItem();if(hand)hand.textContent=selected?.id?icon(selected.id):"";const held=document.getElementById("inventoryHeldName");if(held)held.textContent=`Рука: ${selected?.id?(INFO[selected.id]?.name||"предмет"):"пусто"}`;
+  if(eqHead)eqHead.textContent=this.inventory.equipment.head?icon(this.inventory.equipment.head):"";if(eqBody)eqBody.textContent=this.inventory.equipment.body?icon(this.inventory.equipment.body):"";if(eqLegs)eqLegs.textContent=this.inventory.equipment.legs?icon(this.inventory.equipment.legs):"";if(eqFeet)eqFeet.textContent=this.inventory.equipment.feet?icon(this.inventory.equipment.feet):"";if(eqOff)eqOff.textContent=this.inventory.equipment.offhand?icon(this.inventory.equipment.offhand):"";
+  this.renderCraftGrid();this.setupCraftingInventoryInteractions();
  }
  equipmentSlotForItem(id){const info=INFO[id];if(!info)return null;if(info.tool||info.tool==="sword")return info.tool==="sword"?"weapon":"tool";if(info.armorSlot)return info.armorSlot;return null}
  getArmorValue(){return Object.values(this.inventory.equipment||{}).reduce((sum,id)=>sum+(INFO[id]?.armor||0),0)}
 
  setupTouchLayout(){
-  this.touchLayoutKey="vs_touch_layout_v69";
+  this.touchLayoutKey="vs_touch_layout_v70";
   this.touchDefaults={
     joystick:{x:2.5,y:67,size:104},jump:{x:75,y:58,size:62},attack:{x:87,y:58,size:62},use:{x:75,y:76,size:62},inventory:{x:87,y:76,size:62},pause:{x:50,y:2,size:48}
   };
   try{this.touchLayout=JSON.parse(localStorage.getItem(this.touchLayoutKey)||"null")||JSON.parse(JSON.stringify(this.touchDefaults))}catch{this.touchLayout=JSON.parse(JSON.stringify(this.touchDefaults))}
   this.editingControls=false;this.selectedControl=null;this.applyTouchLayout();
-  const q=id=>document.getElementById(id),range=q("controlSizeRange"),value=q("controlSizeValue"),selected=q("controlSelected");
+  const q=id=>document.getElementById(id),range=q("controlSizeRange"),value=q("controlSizeValue"),selected=q("controlSelected"),camRange=q("cameraSensitivityRange"),camValue=q("cameraSensitivityValue");
+  try{const saved=Number(localStorage.getItem("vs_camera_sensitivity_v70"));if(Number.isFinite(saved))this.controls.touchSensitivity=this.controls.touchPitchSensitivity=saved}catch{}
+  if(camRange){camRange.value=Math.round(this.controls.touchSensitivity*1000);if(camValue)camValue.textContent=(this.controls.touchSensitivity*1000).toFixed(0)}
+  camRange?.addEventListener("input",()=>{const v=Math.max(.006,Math.min(.032,Number(camRange.value)/1000));this.controls.touchSensitivity=v;this.controls.touchPitchSensitivity=v;try{localStorage.setItem("vs_camera_sensitivity_v70",String(v))}catch{}if(camValue)camValue.textContent=Math.round(v*1000)});
   q("controlsEditButton")?.addEventListener("click",()=>this.openControlsEditor());
   q("controlsDone")?.addEventListener("click",()=>this.closeControlsEditor());
   q("controlsReset")?.addEventListener("click",()=>{this.touchLayout=JSON.parse(JSON.stringify(this.touchDefaults));this.applyTouchLayout();if(range)range.value=this.selectedControl?(this.touchLayout[this.selectedControl]?.size||82):82;if(value)value.textContent=range?.value||82});
@@ -167,7 +229,7 @@ class Game{
  closeControlsEditor(){this.editingControls=false;document.body.classList.remove("controls-editor-active");document.getElementById("controlsEditor")?.classList.add("hidden");document.getElementById("mobileControls")?.classList.remove("editorVisible","gameActive");this.persistTouchLayout();this.menu.showPause();}
  pauseGame(){if(!this.running)return;this.running=false;this.setGameUI(false);this.menu.showPause();document.exitPointerLock?.();}
  setupInput(){document.getElementById("multiplayerButton")?.addEventListener("click",()=>document.getElementById("multiplayerPanel")?.classList.remove("hidden"));document.getElementById("closeMultiplayer")?.addEventListener("click",()=>document.getElementById("multiplayerPanel")?.classList.add("hidden"));document.getElementById("connectButton")?.addEventListener("click",()=>{const v=document.getElementById("serverAddress");let u=v?.value.trim();if(!u)u=`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws`;this.mode="multiplayer";this.setModeBadge();this.network.connect(u)});document.getElementById("disconnectButton")?.addEventListener("click",()=>this.network.disconnect());document.getElementById("chatSend")?.addEventListener("click",()=>{const i=document.getElementById("chatInput");this.network.chat(i.value);i.value=""});document.getElementById("chatInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){this.network.chat(e.target.value);e.target.value=""}});addEventListener("keydown",e=>{if(e.code==="Escape"){if(this.inventoryOpen){this.toggleInventory();return}if(this.running){this.running=false;this.menu.showPause();document.exitPointerLock?.()}return}if(e.code==="KeyE")this.toggleInventory();if(e.code.startsWith("Digit")){const n=+e.code.slice(5)-1;if(n>=0&&n<9)this.inventory.selected=n}if(e.code==="KeyF"&&this.player.eat()){this.audio.block();this.particles.burst(this.player.pos.clone().add(new THREE.Vector3(0,1,0)),0xff5533,8)}});
-  addEventListener("mousedown",e=>{if(!this.running)return;if(e.button===0){this.miningHeld=true;this.attackOrBreak()}if(e.button===2)this.placeBlock()});addEventListener("mouseup",e=>{if(e.button===0)this.stopMining()});addEventListener("blur",()=>this.stopMining());addEventListener("contextmenu",e=>e.preventDefault());addEventListener("wheel",e=>{this.inventory.selected=(this.inventory.selected+(e.deltaY>0?1:-1)+9)%9});const bindTouchAction=(id,fn)=>{const el=document.getElementById(id);if(!el)return;el.addEventListener("pointerdown",e=>{if(this.editingControls||!this.running)return;e.preventDefault();e.stopPropagation();el.setPointerCapture?.(e.pointerId);fn()},{passive:false})};bindTouchAction("jumpButton",()=>{if(this.player.jump()){this.audio.jump()}});bindTouchAction("attackButton",()=>{this.miningHeld=true;this.attackOrBreak()});bindTouchAction("useButton",()=>this.useSelected());bindTouchAction("inventoryButton",()=>this.toggleInventory());addEventListener("pointerup",()=>this.stopMining());addEventListener("pointercancel",()=>this.stopMining());const pauseBtn=document.getElementById("pauseGameButton");pauseBtn?.addEventListener("pointerdown",e=>{if(!this.running)return;e.preventDefault();e.stopPropagation();this.pauseGame()},{passive:false});const bindPause=(id,fn)=>{const b=document.getElementById(id);if(!b)return;b.addEventListener("pointerdown",e=>{e.stopPropagation()},{passive:true});b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();fn()})};bindPause("resumeButton",()=>this.resume());bindPause("saveButton",()=>this.save());bindPause("fullscreenPauseButton",()=>this.toggleFullscreen());bindPause("debugPauseButton",()=>this.debug?.show?.());bindPause("controlsEditButton",()=>this.openControlsEditor());bindPause("menuButton",()=>this.toMenu());const closeInv=document.getElementById("closeInventory");if(closeInv)closeInv.onclick=()=>{if(this.inventoryOpen)this.toggleInventory()};const closeContainer=document.getElementById("closeContainer");if(closeContainer)closeContainer.onclick=()=>this.systems.close();const depositContainer=document.getElementById("depositContainer");if(depositContainer)depositContainer.onclick=()=>this.systems.depositToChest();const depositAll=document.getElementById("depositAllContainer");if(depositAll)depositAll.onclick=()=>this.systems.depositAllToChest();
+  addEventListener("mousedown",e=>{if(!this.running)return;if(e.button===0){this.miningHeld=true;this.attackOrBreak()}if(e.button===2)this.placeBlock()});addEventListener("mouseup",e=>{if(e.button===0)this.stopMining()});addEventListener("blur",()=>this.stopMining());addEventListener("contextmenu",e=>e.preventDefault());addEventListener("wheel",e=>{this.inventory.selected=(this.inventory.selected+(e.deltaY>0?1:-1)+9)%9});const bindTouchAction=(id,fn)=>{const el=document.getElementById(id);if(!el)return;el.addEventListener("pointerdown",e=>{if(this.editingControls||!this.running)return;e.preventDefault();e.stopPropagation();el.setPointerCapture?.(e.pointerId);fn()},{passive:false})};bindTouchAction("jumpButton",()=>{if(this.player.jump()){this.audio.jump()}});bindTouchAction("attackButton",()=>{this.miningHeld=true;this.attackOrBreak()});bindTouchAction("useButton",()=>this.useSelected());bindTouchAction("inventoryButton",()=>this.toggleInventory());addEventListener("pointerup",()=>this.stopMining());addEventListener("pointercancel",()=>this.stopMining());const pauseBtn=document.getElementById("pauseGameButton");pauseBtn?.addEventListener("pointerdown",e=>{if(!this.running)return;e.preventDefault();e.stopPropagation();this.pauseGame()},{passive:false});const bindPause=(id,fn)=>{const b=document.getElementById(id);if(!b)return;b.addEventListener("pointerdown",e=>{e.stopPropagation()},{passive:true});b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();fn()})};bindPause("resumeButton",()=>this.resume());bindPause("saveButton",()=>this.save());bindPause("fullscreenPauseButton",()=>this.toggleFullscreen());bindPause("debugPauseButton",()=>this.debug?.show?.());bindPause("controlsEditButton",()=>this.openControlsEditor());bindPause("menuButton",()=>this.toMenu());const closeInv=document.getElementById("closeInventory");if(closeInv)closeInv.onclick=()=>{if(this.inventoryOpen){this.returnCraftGrid(this.craftMode==="table"?this.craftGrid3:this.craftGrid2);this.toggleInventory()}};const closeContainer=document.getElementById("closeContainer");if(closeContainer)closeContainer.onclick=()=>this.systems.close();const depositContainer=document.getElementById("depositContainer");if(depositContainer)depositContainer.onclick=()=>this.systems.depositToChest();const depositAll=document.getElementById("depositAllContainer");if(depositAll)depositAll.onclick=()=>this.systems.depositAllToChest();
   const joy=document.getElementById("joystick"),knob=document.getElementById("joystickKnob");let joyId=null;
   const updateJoy=e=>{const r=joy.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),l=Math.min(r.width*.32,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);knob.style.transform=`translate(${Math.cos(a)*l}px,${Math.sin(a)*l}px)`;this.controls.keys.KeyW=dy<-15;this.controls.keys.KeyS=dy>15;this.controls.keys.KeyA=dx<-15;this.controls.keys.KeyD=dx>15};
   joy.addEventListener("pointerdown",e=>{if(this.editingControls||!this.running||joyId!==null)return;e.preventDefault();e.stopPropagation();joyId=e.pointerId;joy.setPointerCapture?.(e.pointerId);updateJoy(e)},{passive:false});
@@ -231,7 +293,7 @@ async toggleFullscreen(){try{if(document.fullscreenElement){await document.exitF
 }
 const game=new Game();
 globalThis.__voxelGame=game;
-try{if(sessionStorage.getItem("vs_launch_world_v69")){sessionStorage.removeItem("vs_launch_world_v69");requestAnimationFrame(()=>setTimeout(()=>game.start(),120))}}catch(e){console.warn("Auto world launch skipped",e)}
+try{const launchKeys=["vs_launch_world_v70","vs_launch_world_v69","vs_launch_world_v68","vs_launch_world_v67"];const key=launchKeys.find(k=>sessionStorage.getItem(k));if(key){sessionStorage.removeItem(key);requestAnimationFrame(()=>setTimeout(()=>game.start(),120))}}catch(e){console.warn("Auto world launch skipped",e)}
 const boot=document.getElementById("bootSplash"),bar=document.getElementById("bootProgress"),status=document.getElementById("bootStatus");
 requestAnimationFrame(()=>{if(bar)bar.style.width="100%";if(status)status.textContent="Готово";setTimeout(()=>boot?.classList.add("done"),80)});
 addEventListener("beforeunload",()=>{if(!game.skipUnloadSave)game.save()});
