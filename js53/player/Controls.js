@@ -1,5 +1,5 @@
 export class Controls{
-constructor(camera,dom){this.camera=camera;this.dom=dom;this.keys={};this.yaw=0;this.pitch=0;this.sensitivity=.0065;this.touchSensitivity=.016;this.touchPitchSensitivity=.016;this.locked=false;
+constructor(camera,dom){this.camera=camera;this.dom=dom;this.keys={};this.yaw=0;this.pitch=0;this.sensitivity=.0065;this.touchSensitivity=.0085;this.touchPitchSensitivity=.0085;this.locked=false;
 addEventListener("keydown",e=>this.keys[e.code]=true);addEventListener("keyup",e=>this.keys[e.code]=false);
 dom.addEventListener("click",()=>dom.requestPointerLock?.());document.addEventListener("pointerlockchange",()=>this.locked=document.pointerLockElement===dom);
 document.addEventListener("mousemove",e=>{if(!this.locked)return;this.yaw-=e.movementX*this.sensitivity;this.pitch-=e.movementY*this.sensitivity;this.pitch=Math.max(-1.5,Math.min(1.5,this.pitch))})

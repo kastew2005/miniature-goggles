@@ -17,7 +17,7 @@ export class World{
     this.gen=new Generator(cfg.WORLD.SEED);this.generationBusy=false;this.lastCenter="";
     this.changes=new Map();this._textureCache=new Map();
     this.materials=this.makeMaterials();this.workers=[];this.workerSeq=0;this.workerJobs=new Map();this.workerCursor=0;
-    this.meshQueue=[];this.meshQueued=new Set();this.meshBuilding=false;this.workerStarted=false;
+    this.meshQueue=[];this.meshQueued=new Set();this.meshBuilding=false;this.workerStarted=false;this.starterVisual=null;
   }
   initWorker(){if(this.workerStarted)return;this.workerStarted=true;try{const cores=navigator.hardwareConcurrency||2;const count=Math.max(1,Math.min(2,cores>4?2:1));for(let i=0;i<count;i++){const w=new Worker(new URL("./WorldWorker.js",import.meta.url),{type:"module"});w.onmessage=e=>{const job=this.workerJobs.get(e.data.id);if(!job)return;this.workerJobs.delete(e.data.id);if(e.data.error)job.reject(new Error(e.data.error));else job.resolve(new Uint8Array(e.data.buffer));};w.onerror=e=>{console.warn("World worker:",e.message);for(const [id,job] of this.workerJobs){job.reject(new Error("Worker failed"));this.workerJobs.delete(id)}};this.workers.push(w)}}catch(e){this.workers=[]}}
   key(x,z){return `${x},${z}`}
@@ -177,6 +177,21 @@ export class World{
     c._renderFailures=0;
     this.meshes.set(key,group);
   }
+
+  ensureStarterVisual(cx,cz){
+    if(this.starterVisual)return;
+    const s=this.cfg.WORLD.CHUNK_SIZE,bx=cx*s,bz=cz*s;
+    const group=new THREE.Group();group.name="starter-visual";group.frustumCulled=false;
+    const mat=new THREE.MeshLambertMaterial({color:0x6f963f});
+    const geo=new THREE.BoxGeometry(1,1,1);
+    for(let x=0;x<s;x++)for(let z=0;z<s;z++){
+      let top=3;
+      for(let y=this.cfg.WORLD.HEIGHT-1;y>=0;y--){if(this.getBlock(bx+x,y,bz+z) && INFO[this.getBlock(bx+x,y,bz+z)]?.solid){top=y+1;break}}
+      const m=new THREE.Mesh(geo,mat);m.position.set(bx+x+.5,top-.5,bz+z+.5);m.scale.y=1;m.userData.starter=true;group.add(m);
+    }
+    this.scene.add(group);this.starterVisual=group;
+  }
+  removeStarterVisual(){if(!this.starterVisual)return;this.scene.remove(this.starterVisual);this.starterVisual.traverse(o=>{if(o.geometry?.dispose&&o.userData?.starter)o.geometry=null});this.starterVisual=null}
 
   unloadFar(cx,cz,r){for(const [k,g] of this.meshes){const [x,z]=k.split(",").map(Number);if(Math.max(Math.abs(x-cx),Math.abs(z-cz))>r){this.scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()});this.meshes.delete(k);this.meshQueued.delete(k);this.chunks.delete(k)}}}
   loadChanges(list){this.changes.clear();for(const x of list||[]){if(Array.isArray(x)&&x.length>=4)this.changes.set(`${x[0]|0},${x[1]|0},${x[2]|0}`,x[3]|0)}}
