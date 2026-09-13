@@ -1,7 +1,27 @@
 import {SaveManager} from "../save/SaveManager.js";
 export class Menu{
  constructor(game){this.game=game;this.main=document.getElementById("mainMenu");this.pause=document.getElementById("pauseMenu");const q=id=>document.getElementById(id);
-  const bind=(id,fn)=>{const el=q(id);if(!el)return;el.type="button";el.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();fn(e)});el.addEventListener("touchend",e=>{if(e.cancelable)e.preventDefault();e.stopPropagation();fn(e)},{passive:false})};
+  // Robust mobile menu input: use Pointer Events as the single source of truth.
+  // This avoids iOS Safari firing touchend + click twice and also works with
+  // mouse, stylus and touch without relying on a particular browser event.
+  const bind=(id,fn)=>{
+    const el=q(id);
+    if(!el)return;
+    el.type="button";
+    let lastPointer=0;
+    const run=(e)=>{
+      if(e){e.preventDefault();e.stopPropagation();}
+      const now=performance.now();
+      if(now-lastPointer<350)return;
+      lastPointer=now;
+      try{fn(e)}catch(err){console.error("Menu action failed:",id,err)}
+    };
+    el.addEventListener("pointerup",run,{passive:false});
+    el.addEventListener("click",e=>{
+      // Mouse click has no preceding pointerup in some older WebViews.
+      run(e);
+    },{passive:false});
+  };
   bind("playButton",()=>this.openMode());bind("settingsButton",()=>q("settingsPanel")?.classList.remove("hidden"));bind("creditsButton",()=>q("creditsPanel")?.classList.remove("hidden"));
   bind("modeBackButton",()=>this.closeAllSub());bind("singleplayerChoice",()=>this.openWorlds());bind("multiplayerChoice",()=>this.openMultiplayer());bind("singleBackButton",()=>this.openMode());bind("newWorldButton",()=>this.openCreateWorld());bind("newWorldBackButton",()=>this.openWorlds());bind("createWorldButton",()=>this.createWorld());
   bind("closeSettings",()=>q("settingsPanel")?.classList.add("hidden"));bind("closeCredits",()=>q("creditsPanel")?.classList.add("hidden"));bind("closeMultiplayer",()=>this.openMode());

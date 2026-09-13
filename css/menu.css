@@ -41,3 +41,25 @@ button,.menuBtn45,.backBtn45,.newWorldBtn45,.worldAction45{font-family:Arial,Hel
 #mainMenu .menuBackdrop,.sceneVignette,.sceneShade{pointer-events:none!important}
 #mainMenu .sceneVignette,#mainMenu .sceneShade{display:none!important}
 #mainMenu button{position:relative;z-index:200;pointer-events:auto!important}
+
+
+/* Menu interaction fix — keep the menu above the WebGL canvas and make every
+   interactive layer explicitly touch/click enabled on iOS Safari/WebViews. */
+#mainMenu, #modeSelectPanel, #singleplayerPanel, #newWorldPanel, #settingsPanel,
+#creditsPanel, #multiplayerPanel, #installPanel, #lanPanel {
+  pointer-events:auto !important;
+}
+#mainMenu, #modeSelectPanel, #singleplayerPanel, #newWorldPanel, #settingsPanel,
+#creditsPanel, #multiplayerPanel, #installPanel, #lanPanel {
+  z-index:1000 !important;
+}
+#mainMenu button, #modeSelectPanel button, #singleplayerPanel button,
+#newWorldPanel button, #settingsPanel button, #creditsPanel button,
+#multiplayerPanel button, #installPanel button, #lanPanel button {
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  -webkit-tap-highlight-color:transparent;
+}
+#mainMenu .menuBackdrop, #mainMenu .sceneVignette, #mainMenu .sceneShade {
+  pointer-events:none !important;
+}
