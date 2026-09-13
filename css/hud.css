@@ -149,3 +149,5 @@ body.inventory-open #hud,body.inventory-open #mobileControls{visibility:hidden;p
 body.inventory-open #game canvas{pointer-events:none}
 .hearts{display:block;white-space:nowrap;letter-spacing:1px;line-height:1}.food{display:block;white-space:nowrap;letter-spacing:0;line-height:1.15;font-size:.92em}.hotbarTitle{margin-bottom:6px}
 @media(pointer:coarse){#inventoryPanel .invSlot{min-width:44px;min-height:44px}.mobileStackControls button{font-size:12px}}
+
+.breathBar{font-size:18px;letter-spacing:1px;line-height:22px;text-shadow:0 1px 2px #001}.breathBar.hidden{display:none!important}
