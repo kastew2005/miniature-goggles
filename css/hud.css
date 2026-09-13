@@ -103,3 +103,49 @@
 @media(max-width:900px){.inventoryTop{grid-template-columns:190px 1fr}.craftPanel{grid-column:1/-1}.characterStage{height:210px}}
 @media(max-width:620px){.minecraftInventory{width:98vw;max-height:96vh;padding:10px}.inventoryTop{grid-template-columns:1fr 1fr;gap:7px}.playerPreview{grid-row:span 2}.characterStage{height:190px}.equipmentPanel .equipmentGrid{grid-template-columns:repeat(2,1fr)}.craftPanel{grid-column:2}.craftWorkbench{gap:5px;padding:7px}.craftOutput{width:70px;height:70px;flex-basis:70px;font-size:23px}.craftArrow{font-size:22px}.craftGrid{width:135px}.inventoryGrid{grid-template-columns:repeat(9,1fr)!important;gap:3px!important}.invSlot{font-size:18px!important}}
 @media(max-width:430px){.inventoryTop{grid-template-columns:1fr}.playerPreview,.craftPanel{grid-column:1}.equipmentPanel{grid-column:1}.characterStage{height:175px}.craftGrid{width:122px}.craftOutput{width:62px;height:62px;flex-basis:62px}}
+
+/* Universe 76 — unified inventory interaction layer */
+#inventoryPanel{z-index:500;background:rgba(4,7,7,.88);backdrop-filter:blur(8px);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#inventoryPanel .inventoryWindow{width:min(1180px,96vw);max-height:min(96vh,920px);box-sizing:border-box}
+.inventoryMainGrid{grid-template-columns:repeat(9,minmax(42px,1fr))!important}
+.inventoryHotbarGrid{grid-template-columns:repeat(9,minmax(42px,1fr))!important;max-width:620px;margin:0 auto}
+.inventoryHotbarGrid .invSlot{background:linear-gradient(#666e71,#303739)}
+.invSlot{min-width:0;min-height:46px;aspect-ratio:1/1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+.invSlot.cursorActive{outline:1px solid #ffffff28}
+#inventoryCursorStack{display:inline-block;margin-right:12px;color:#dce4e1;font-weight:900}
+#inventoryCursorStack.active{color:#fff;text-shadow:0 0 12px #fff8}
+.hotbarTitle{margin-top:16px}
+.mobileStackControls{display:none;align-items:center;justify-content:center;gap:6px;margin-top:9px;padding:7px;background:#080b0c;border:2px solid #111718}
+.mobileStackControls span{font:900 9px monospace;color:#7f8a87;margin-right:3px}
+.mobileStackControls button{min-height:42px;padding:7px 12px;background:#3b4447;color:#fff;border:2px solid #111719;border-top-color:#879094;font-weight:900;touch-action:manipulation}
+.mobileStackControls button.active{background:#697478;box-shadow:inset 0 0 0 2px #dce2e1}
+.inventoryPreview3D canvas{display:block;width:100%;height:100%;touch-action:none}
+@media(pointer:coarse){
+  #inventoryPanel{padding:4px}
+  #inventoryPanel .inventoryWindow{width:100%;max-width:none;max-height:100%;height:100%;border-width:3px;padding:10px;overflow:auto}
+  #inventoryPanel .inventoryHeader{position:sticky;top:0;z-index:4;background:linear-gradient(#303738f7,#161b1cf7);margin:-10px -10px 10px;padding:8px 10px}
+  #inventoryPanel .inventoryTop{grid-template-columns:1fr 1fr;gap:7px}
+  #inventoryPanel .playerPreview{grid-row:span 2}
+  #inventoryPanel .characterStage{height:200px}
+  .mobileStackControls{display:flex}
+  .invSlot{min-width:42px;min-height:42px;font-size:20px!important}
+}
+@media(pointer:coarse) and (max-height:520px){
+  #inventoryPanel .inventoryTop{grid-template-columns:180px 1fr 1.2fr}
+  #inventoryPanel .playerPreview{grid-row:auto}
+  #inventoryPanel .characterStage{height:160px}
+  #inventoryPanel .craftPanel{grid-column:auto}
+  #inventoryPanel .inventoryWindow{font-size:12px}
+  .invSlot{min-width:36px;min-height:36px}
+}
+@media(max-width:430px){
+  #inventoryPanel .inventoryTop{grid-template-columns:1fr}
+  #inventoryPanel .playerPreview,#inventoryPanel .craftPanel,#inventoryPanel .equipmentPanel{grid-column:1}
+  #inventoryPanel .characterStage{height:170px}
+  .inventoryMainGrid,.inventoryHotbarGrid{gap:3px!important}
+  .invSlot{min-width:31px;min-height:31px;font-size:17px!important}
+}
+body.inventory-open #hud,body.inventory-open #mobileControls{visibility:hidden;pointer-events:none}
+body.inventory-open #game canvas{pointer-events:none}
+.hearts{display:block;white-space:nowrap;letter-spacing:1px;line-height:1}.food{display:block;white-space:nowrap;letter-spacing:0;line-height:1.15;font-size:.92em}.hotbarTitle{margin-bottom:6px}
+@media(pointer:coarse){#inventoryPanel .invSlot{min-width:44px;min-height:44px}.mobileStackControls button{font-size:12px}}

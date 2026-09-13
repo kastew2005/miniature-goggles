@@ -1,8 +1,10 @@
 import THREE from "../three.js";
 import {BLOCK,INFO} from "../world/Block.js";
 export class Player{
- constructor(camera,world,controls,cfg){this.camera=camera;this.world=world;this.controls=controls;this.cfg=cfg;this.pos=new THREE.Vector3(0,70,0);this.vel=new THREE.Vector3();this.onGround=false;this.health=20;this.hunger=20;this.inventory=null;this.walkTime=0;this.sprint=false;this.stamina=100;this.xp=0;this.level=1;this.regenTimer=0;this.effects={haste:0,miningFatigue:0,aquaAffinity:false}}
- setInventory(inv){this.inventory=inv}
+ constructor(camera,world,controls,cfg){this.camera=camera;this.world=world;this.controls=controls;this.cfg=cfg;this.pos=new THREE.Vector3(0,70,0);this.vel=new THREE.Vector3();this.onGround=false;this.health=20;this.hunger=20;this.inventory=null;this.walkTime=0;this.sprint=false;this.stamina=100;this.xp=0;this.level=1;this.regenTimer=0;this.effects={haste:0,miningFatigue:0,aquaAffinity:false};this.handGroup=new THREE.Group();this.handGroup.position.set(.43,-.38,-.82);this.camera.add(this.handGroup);this.handArm=null;this.heldMesh=null;this.heldId=0;this.updateHeldItem(0)}
+ setInventory(inv){this.inventory=inv;this.updateHeldItem(inv?.selectedItem?.()?.id||0)}
+ updateHeldItem(id=0){if(this.heldId===id&&this.handArm)return;this.heldId=id;this.handGroup.clear();const skin=new THREE.MeshLambertMaterial({color:0xc18d6e});this.handArm=new THREE.Mesh(new THREE.BoxGeometry(.22,.65,.22),skin);this.handArm.rotation.z=-.18;this.handGroup.add(this.handArm);if(!id||!INFO[id])return;const info=INFO[id],color=info.solid?0x777777:(info.tool?0xb0b0b0:0x8aa06b);const item=new THREE.Mesh(new THREE.BoxGeometry(info.tool?.includes?.("pick")?.5:.28,.28,.18),new THREE.MeshLambertMaterial({color}));item.position.set(.05,.2,-.12);item.rotation.z=-.25;this.handGroup.add(item);this.heldMesh=item}
+
  solid(x,y,z){return !!INFO[this.world.getBlock(Math.floor(x),Math.floor(y),Math.floor(z))]?.solid}
  collides(p){const r=.29,h=1.78;for(let x=Math.floor(p.x-r);x<=Math.floor(p.x+r);x++)for(let y=Math.floor(p.y+.02);y<=Math.floor(p.y+h);y++)for(let z=Math.floor(p.z-r);z<=Math.floor(p.z+r);z++)if(this.solid(x,y,z))return true;return false}
  jump(){const grounded=this.onGround||INFO[this.world.getBlock(Math.floor(this.pos.x),Math.floor(this.pos.y-.12),Math.floor(this.pos.z))]?.solid;if(!grounded)return false;this.vel.y=this.cfg.PLAYER.JUMP;this.onGround=false;return true}
