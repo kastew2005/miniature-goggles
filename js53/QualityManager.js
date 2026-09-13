@@ -13,12 +13,12 @@ export class QualityManager {
   }
   applyTier() {
     const presets = {
-      low: { pixelRatio:.62, renderDistance:2, startupDistance:1, maxLights:4, particles:40, rain:35, clouds:5, shadows:false, maxMobs:5, shadowSize:256 },
-      medium: { pixelRatio:.78, renderDistance:4, startupDistance:1, maxLights:8, particles:90, rain:70, clouds:8, shadows:true, maxMobs:9, shadowSize:512 },
-      high: { pixelRatio:.92, renderDistance:5, startupDistance:1, maxLights:14, particles:140, rain:110, clouds:11, shadows:true, maxMobs:14, shadowSize:512 }
+      low: { pixelRatio:.58, renderDistance:2, startupDistance:1, maxLights:3, particles:28, rain:25, clouds:4, shadows:false, maxMobs:4, shadowSize:256 },
+      medium: { pixelRatio:.68, renderDistance:3, startupDistance:1, maxLights:6, particles:55, rain:45, clouds:6, shadows:false, maxMobs:7, shadowSize:512 },
+      high: { pixelRatio:.82, renderDistance:4, startupDistance:1, maxLights:10, particles:90, rain:70, clouds:8, shadows:false, maxMobs:10, shadowSize:512 }
     };
     this.preset = presets[this.tier] || presets.medium;
-    if(this.mobile) this.preset={...this.preset,pixelRatio:Math.min(this.preset.pixelRatio,.92),shadows:this.tier!=='low'};
+    if(this.mobile) this.preset={...this.preset,pixelRatio:Math.min(this.preset.pixelRatio,.78),shadows:false};
   }
   configureRenderer(renderer) {
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, this.preset.pixelRatio));
