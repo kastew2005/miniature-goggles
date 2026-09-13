@@ -8,7 +8,7 @@ import {PlantBlock} from "./PlantBlock.js";
  * Voxel Survival Universe 43
  * Performance pass:
  * - one draw group per block/material instead of one group per visible face;
- * - deterministic 64x64 nearest-neighbour textures generated once and cached;
+ * - procedural textures remain cached, while supplied 16x16 grass textures are loaded locally;
  * - texture detail is procedural, so there are no external texture requests;
  * - chunk rebuilds stay inside a small frame budget.
  */
@@ -52,12 +52,28 @@ export class World{
     }
     const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat,THREE.UnsignedByteType);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.wrapS=THREE.ClampToEdgeWrapping;t.wrapT=THREE.ClampToEdgeWrapping;t.flipY=false;t.colorSpace=THREE.SRGBColorSpace;t.needsUpdate=true;this._textureCache.set(file,t);return t;
   }
+  // Real local texture loader for user-supplied pixel-art assets.
+  imageTexture(path){
+    if(this._textureCache.has('img:'+path)) return this._textureCache.get('img:'+path);
+    const t=new THREE.TextureLoader().load('./assets/textures/'+path);
+    t.magFilter=THREE.NearestFilter;
+    t.minFilter=THREE.NearestFilter;
+    t.generateMipmaps=false;
+    t.wrapS=THREE.ClampToEdgeWrapping;
+    t.wrapT=THREE.ClampToEdgeWrapping;
+    t.colorSpace=THREE.SRGBColorSpace;
+    this._textureCache.set('img:'+path,t);
+    return t;
+  }
   mat(color,file,opts={}){
     const presets={
       grass:['#667c43','#87975a','grass'],dirt:['#76583b',null,'dirt'],stone:['#77756f',null,'stone'],sand:['#c8b78a',null,'sand'],gravel:['#77756f',null,'cobble'],wood_side:['#765b3d',null,'wood'],wood_top:['#9a7a50',null,'wood'],leaves:['#536f3e','#718a52','leaves'],planks:['#92714a',null,'wood'],brick:['#8d5b50',null,'brick'],glass:['#a9c7c7',null,'glass'],water:['#587f91',null,'noise'],coal:['#383a38',null,'ore'],iron:['#77766f','#aaa79b','ore'],copper:['#77746b','#a36f50','ore'],furnace:['#696965',null,'stone'],chest:['#765735',null,'wood'],lantern:['#9b8050','#d0b36d','ore'],campfire:['#875b42','#c18a48','ore'],moss:['#5c7047',null,'grass'],glowstone:['#b4a36a','#d5c78d','ore'],cobble:['#686762',null,'cobble'],snow:['#d7dedb',null,'snow'],clay:['#96786d',null,'dirt'],farmland:['#664c39',null,'dirt'],wheat:['#87905a','#b0a765','grass'],bedrock:['#292a29',null,'cobble'],obsidian:['#292238',null,'noise'],diamond_ore:['#69777f','#55d7e8','ore'],birch_log:['#d7c49b','#6f5a3b','wood'],birch_leaves:['#75944e',null,'leaves'],spruce_log:['#60472e',null,'wood'],spruce_leaves:['#3f603b',null,'leaves'],jungle_log:['#7d4e2c',null,'wood'],jungle_leaves:['#3d823c',null,'leaves'],plant:['#5e963e',null,'grass'],poppy:['#b83d3d',null,'grass'],dandelion:['#e4c33c',null,'grass'],cactus:['#4d913e','#78ad4c','grass'],dead_bush:['#80683c',null,'wood'],vine:['#4c8b3f',null,'grass'],watermelon:['#4d813c','#c6c04d','grass']
     };
     const q=presets[file]||[color,null,'noise'];
-    const m=new THREE.MeshLambertMaterial({color:0xffffff,map:this.texture(file,q[0],q[1],q[2]),...opts,side:THREE.DoubleSide});
+    const map=(file==='grass_top.png'||file==='grass_side.png'||file==='grass_bottom.png')
+      ? this.imageTexture(file)
+      : this.texture(file,q[0],q[1],q[2]);
+    const m=new THREE.MeshLambertMaterial({color:0xffffff,map,...opts,side:THREE.DoubleSide});
     if(file==='water'){
       m.userData.waveTime=0;
       m.onBeforeCompile=shader=>{
@@ -71,6 +87,10 @@ export class World{
   }
   makeMaterials(){
     const M={}, add=(id,color,file,opts={})=>{M[id]=this.mat(color,file,opts)};
+    // Supplied 16x16 grass atlas: separate top/side/bottom materials.
+    M.grass_top=this.mat('#ffffff','grass_top.png');
+    M.grass_side=this.mat('#ffffff','grass_side.png');
+    M.grass_bottom=this.mat('#ffffff','grass_bottom.png');
     add(BLOCK.GRASS,'#5b913b','grass');add(BLOCK.DIRT,'#79502d','dirt');add(BLOCK.STONE,'#777777','stone');add(BLOCK.SAND,'#d8c17a','sand');add(BLOCK.GRAVEL,'#77736b','gravel');add(BLOCK.LOG,'#7d542f','wood_side');add(BLOCK.LEAVES,'#3f8e3a','leaves',{transparent:true,alphaTest:.5,opacity:.96});add(BLOCK.PLANKS,'#a56f3f','planks');add(BLOCK.GLASS,'#b9e8f5','glass',{transparent:true,opacity:.55});add(BLOCK.BRICK,'#9c4d40','brick');add(BLOCK.WATER,'#3973c9','water',{transparent:true,opacity:.55});add(BLOCK.COAL,'#303030','coal');add(BLOCK.IRON,'#777777','iron');add(BLOCK.COPPER,'#777777','copper');add(BLOCK.FURNACE,'#777777','furnace');add(BLOCK.CHEST,'#9a5b28','chest');add(BLOCK.LANTERN,'#d79b35','lantern');add(BLOCK.CAMPFIRE,'#d65d24','campfire');add(BLOCK.MOSS,'#4f8744','moss');add(BLOCK.GLOWSTONE,'#e7c85d','glowstone');add(BLOCK.COBBLE,'#696969','cobble');add(BLOCK.SNOW,'#e9f2f4','snow');add(BLOCK.CLAY,'#aa7667','clay');add(BLOCK.FARMLAND,'#6b452c','farmland');add(BLOCK.BED,'#c9c1b5','bed');add(BLOCK.CRAFTING_TABLE,'#a56f3f','planks');add(BLOCK.OBSIDIAN,'#292238','obsidian');add(BLOCK.DIAMOND_ORE,'#6f7b83','diamond_ore');add(BLOCK.WHEAT,'#7f9a39','wheat',{transparent:true,opacity:.95});add(BLOCK.BEDROCK,'#171717','bedrock');    add(BLOCK.BIRCH_LOG,'#d7c49b','birch_log');add(BLOCK.BIRCH_LEAVES,'#75944e','birch_leaves',{transparent:true,alphaTest:.5,opacity:.9});
     add(BLOCK.SPRUCE_LOG,'#60472e','spruce_log');add(BLOCK.SPRUCE_LEAVES,'#3f603b','spruce_leaves',{transparent:true,alphaTest:.5,opacity:.9});
     add(BLOCK.JUNGLE_LOG,'#7d4e2c','jungle_log');add(BLOCK.JUNGLE_LEAVES,'#3d823c','jungle_leaves',{transparent:true,alphaTest:.5,opacity:.9});
@@ -147,8 +167,13 @@ export class World{
     const uv=[[0,0],[1,0],[1,1],[0,1]];
 
     const pushFace=(id,x,y,z,face)=>{
-      let b=buckets.get(id);
-      if(!b){b={p:[],n:[],u:[],i:[]};buckets.set(id,b)}
+      // Grass uses three atlas textures; other blocks remain one batched bucket.
+      const faceIndex=faceDefs.indexOf(face);
+      const bucketKey=id===BLOCK.GRASS
+        ? `grass_${faceIndex===2?'top':faceIndex===3?'bottom':'side'}`
+        : String(id);
+      let b=buckets.get(bucketKey);
+      if(!b){b={p:[],n:[],u:[],i:[],blockId:id,faceIndex};buckets.set(bucketKey,b)}
       const base=b.p.length/3;
       for(let q=0;q<4;q++){
         const vv=face.v[q]; const scaleY=INFO[id]?.waterLevel?((INFO[id].waterLevel||4)/4):1;
@@ -201,7 +226,9 @@ export class World{
       g.setAttribute('uv',new THREE.Float32BufferAttribute(b.u,2));
       g.setIndex(b.i);
       g.computeBoundingSphere();
-      const material=this.materials[id]||this.materials[BLOCK.STONE];
+      const material=b.blockId===BLOCK.GRASS
+        ? (b.faceIndex===2?this.materials.grass_top:b.faceIndex===3?this.materials.grass_bottom:this.materials.grass_side)
+        : (this.materials[b.blockId]||this.materials[BLOCK.STONE]);
       const mesh=new THREE.Mesh(g,material);
       mesh.frustumCulled=false;
       mesh.castShadow=!this.cfg.QUALITY?.mobile;mesh.receiveShadow=!this.cfg.QUALITY?.mobile;
